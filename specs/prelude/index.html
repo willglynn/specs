@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `prelude` mod in crate `specs`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, prelude">
+
+    <title>specs::prelude - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../normalize.css">
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc mod">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'>Module prelude</p><div class="block items"><ul><li><a href="#reexports">Reexports</a></li><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#traits">Traits</a></li><li><a href="#types">Type Definitions</a></li></ul></div><p class='location'><a href='../index.html'>specs</a></p><script>window.sidebarCurrent = {name: 'prelude', ty: 'mod', relpath: '../'};</script><script defer src="../sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content">
+<h1 class='fqn'><span class='in-band'>Module <a href='../index.html'>specs</a>::<wbr><a class="mod" href=''>prelude</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a class='srclink' href='../../src/specs/lib.rs.html#228-235' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Reexports for very common types.</p>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use data::<a class="type" href="../../specs/data/type.Entities.html" title="type specs::data::Entities">Entities</a>;</code></td></tr></table><h2 id='structs' class='section-header'><a href="#structs">Structs</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.DenseVecStorage.html"
+                                  title='struct specs::prelude::DenseVecStorage'>DenseVecStorage</a></td>
+                           <td class='docblock-short'>
+                                <p>Dense vector storage. Has a redirection 2-way table
+between entities and components, allowing to leave
+no gaps within the data.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Dispatcher.html"
+                                  title='struct specs::prelude::Dispatcher'>Dispatcher</a></td>
+                           <td class='docblock-short'>
+                                <p>The dispatcher struct, allowing
+systems to be executed in parallel.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.DispatcherBuilder.html"
+                                  title='struct specs::prelude::DispatcherBuilder'>DispatcherBuilder</a></td>
+                           <td class='docblock-short'>
+                                <p>Builder for the <a href="struct.Dispatcher.html"><code>Dispatcher</code></a>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Entity.html"
+                                  title='struct specs::prelude::Entity'>Entity</a></td>
+                           <td class='docblock-short'>
+                                <p><code>Entity</code> type, as seen by the user.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.Fetch.html"
+                                  title='struct specs::prelude::Fetch'>Fetch</a></td>
+                           <td class='docblock-short'>
+                                <p>Return value of <a href="struct.Resources.html#method.fetch"><code>Resources::fetch</code></a>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.FetchMut.html"
+                                  title='struct specs::prelude::FetchMut'>FetchMut</a></td>
+                           <td class='docblock-short'>
+                                <p>Return value of <a href="struct.Resources.html#method.fetch_mut"><code>Resources::fetch_mut</code></a>.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.FlaggedStorage.html"
+                                  title='struct specs::prelude::FlaggedStorage'>FlaggedStorage</a></td>
+                           <td class='docblock-short'>
+                                <p>Wrapper storage that stores modifications to components in a bitset.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.HashMapStorage.html"
+                                  title='struct specs::prelude::HashMapStorage'>HashMapStorage</a></td>
+                           <td class='docblock-short'>
+                                <p>HashMap-based storage. Best suited for rare components.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.VecStorage.html"
+                                  title='struct specs::prelude::VecStorage'>VecStorage</a></td>
+                           <td class='docblock-short'>
+                                <p>Vector storage. Uses a simple <code>Vec</code>. Supposed to have maximum
+performance for the components mostly present in entities.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="struct" href="struct.World.html"
+                                  title='struct specs::prelude::World'>World</a></td>
+                           <td class='docblock-short'>
+                                <p>The <code>World</code> struct contains the component storages and
+other resources.</p>
+                           </td>
+                       </tr></table><h2 id='enums' class='section-header'><a href="#enums">Enums</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="enum" href="enum.RunningTime.html"
+                                  title='enum specs::prelude::RunningTime'>RunningTime</a></td>
+                           <td class='docblock-short'>
+                                
+                           </td>
+                       </tr></table><h2 id='traits' class='section-header'><a href="#traits">Traits</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="trait" href="trait.Component.html"
+                                  title='trait specs::prelude::Component'>Component</a></td>
+                           <td class='docblock-short'>
+                                <p>Abstract component type. Doesn&#39;t have to be Copy or even Clone.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="trait" href="trait.Join.html"
+                                  title='trait specs::prelude::Join'>Join</a></td>
+                           <td class='docblock-short'>
+                                <p>The purpose of the <code>Join</code> trait is to provide a way
+to access multiple storages at the same time with
+the merged bit set.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="trait" href="trait.ParJoin.html"
+                                  title='trait specs::prelude::ParJoin'>ParJoin</a></td>
+                           <td class='docblock-short'>
+                                <p>The purpose of the <code>ParJoin</code> trait is to provide a way
+to access multiple storages in parallel at the same time with
+the merged bit set.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="trait" href="trait.Resource.html"
+                                  title='trait specs::prelude::Resource'>Resource</a></td>
+                           <td class='docblock-short'>
+                                <p>A resource defines a set of data
+which can only be accessed according
+to Rust&#39;s typical borrowing model (one writer xor multiple readers).</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="trait" href="trait.System.html"
+                                  title='trait specs::prelude::System'>System</a></td>
+                           <td class='docblock-short'>
+                                <p>A <code>System</code>, executed with a
+set of required <a href="trait.Resource.html"><code>Resource</code></a>s.</p>
+                           </td>
+                       </tr></table><h2 id='types' class='section-header'><a href="#types">Type Definitions</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class="type" href="type.ReadStorage.html"
+                                  title='type specs::prelude::ReadStorage'>ReadStorage</a></td>
+                           <td class='docblock-short'>
+                                <p>A storage with read access.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class="type" href="type.WriteStorage.html"
+                                  title='type specs::prelude::WriteStorage'>WriteStorage</a></td>
+                           <td class='docblock-short'>
+                                <p>A storage with read and write access.</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                    <dt>+</dt>
+                    <dd>Collapse/expand all sections</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "specs";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+(function() {var implementors = {};
+implementors["specs"] = [];
+implementors["tuple_utils"] = [];
+
+            if (window.register_implementors) {
+                window.register_implementors(implementors);
+            } else {
+                window.pending_implementors = implementors;
+            }
+        
+})()
