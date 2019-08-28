@@ -11,6 +11,16 @@ use crate::{
     world::Index,
 };
 
+pub trait SafeSliceAccess<T> {
+    fn as_slice(&self) -> &[T];
+    fn as_mut_slice(&mut self) -> &mut [T];
+}
+
+pub trait UnsafeSliceAccess<T> {
+    unsafe fn unsafe_slice(&self) -> &[T];
+    unsafe fn unsafe_mut_slice(&mut self) -> &mut [T];
+}
+
 /// BTreeMap-based storage.
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
@@ -83,12 +93,38 @@ unsafe impl<T> DistinctStorage for HashMapStorage<T> {}
 ///
 /// Note that this only stores the data (`T`) densely; indices
 /// to the data are stored in a sparse `Vec`.
+///
+/// `as_slice()` and `as_mut_slice()` indices are local to this
+/// `DenseVecStorage` at this particular moment. These indices
+/// cannot be compared with indices from any other storage, and
+/// a particular entity's position within this slice may change
+/// over time.
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
 pub struct DenseVecStorage<T> {
     data: Vec<T>,
     entity_id: Vec<Index>,
     data_id: Vec<Index>,
+}
+
+impl<T> SafeSliceAccess<T> for DenseVecStorage<T> {
+    /// Returns a slice of all the components in this storage.
+    ///
+    /// Indices inside the slice do not correspond to anything in particular, and
+    /// especially do not correspond with entity IDs.
+    #[inline]
+    fn as_slice(&self) -> &[T] {
+        self.data.as_slice()
+    }
+
+    /// Returns a mutable slice of all the components in this storage.
+    ///
+    /// Indices inside the slice do not correspond to anything in particular, and
+    /// especially do not correspond with entity IDs.
+    #[inline]
+    fn as_mut_slice(&mut self) -> &mut [T] {
+        self.data.as_mut_slice()
+    }
 }
 
 impl<T> UnprotectedStorage<T> for DenseVecStorage<T> {
@@ -179,14 +215,43 @@ unsafe impl<T> DistinctStorage for NullStorage<T> {}
 
 /// Vector storage. Uses a simple `Vec`. Supposed to have maximum
 /// performance for the components mostly present in entities.
+///
+/// `unsafe_slice()` and `unsafe_mut_slice()` indices correspond to
+/// entity IDs. These can be compared to other `VecStorage`s, to
+/// other `DefaultVecStorage`s, and to `Entity::id()`s for live
+/// entities.
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
 pub struct VecStorage<T>(Vec<T>);
 
+impl<T> UnsafeSliceAccess<T> for VecStorage<T> {
+    /// Returns a slice of all the components in this storage.
+    ///
+    /// # Safety
+    ///
+    /// This slice contains uninitialized and dropped values. If this is a
+    /// problem, consider using `DefaultVecStorage` or `DenseVecStorage` instead.
+    #[inline]
+    unsafe fn unsafe_slice(&self) -> &[T] {
+        self.0.as_slice()
+    }
+
+    /// Returns a mutable slice of all the components in this storage.
+    ///
+    /// # Safety
+    ///
+    /// This slice contains uninitialized and dropped values. If this is a
+    /// problem, consider using `DefaultVecStorage` or `DenseVecStorage` instead.
+    #[inline]
+    unsafe fn unsafe_mut_slice(&mut self) -> &mut [T] {
+        self.0.as_mut_slice()
+    }
+}
+
 impl<T> UnprotectedStorage<T> for VecStorage<T> {
     unsafe fn clean<B>(&mut self, has: B)
-    where
-        B: BitSetLike,
+        where
+            B: BitSetLike,
     {
         use std::ptr;
         for (i, v) in self.0.iter_mut().enumerate() {
@@ -227,3 +292,71 @@ impl<T> UnprotectedStorage<T> for VecStorage<T> {
 }
 
 unsafe impl<T> DistinctStorage for VecStorage<T> {}
+
+/// Vector storage, like `VecStorage`, but allows safe access to the
+/// interior slices because unused slots are always initialized.
+///
+/// Requires the component to implement `Default`.
+///
+/// `as_slice()` and `as_mut_slice()` indices correspond to entity IDs.
+/// These can be compared to other `DefaultVecStorage`s, to other
+/// `VecStorage`s, and to `Entity::id()`s for live entities.
+#[derive(Derivative)]
+#[derivative(Default(bound = ""))]
+pub struct DefaultVecStorage<T>(Vec<T>);
+
+impl<T> UnprotectedStorage<T> for DefaultVecStorage<T> where T: Default {
+    unsafe fn clean<B>(&mut self, _has: B)
+        where
+            B: BitSetLike,
+    {
+        self.0.clear();
+    }
+
+    unsafe fn get(&self, id: Index) -> &T {
+        self.0.get_unchecked(id as usize)
+    }
+
+    unsafe fn get_mut(&mut self, id: Index) -> &mut T {
+        self.0.get_unchecked_mut(id as usize)
+    }
+
+    unsafe fn insert(&mut self, id: Index, v: T) {
+        let id = id as usize;
+
+        if self.0.len() <= id {
+            // fill all the empty slots with default values
+            self.0.resize_with(id, Default::default);
+            // store the desired value
+            self.0.push(v)
+        } else {
+            // store the desired value directly
+            self.0[id] = v;
+        }
+    }
+
+    unsafe fn remove(&mut self, id: Index) -> T {
+        // make a new default value
+        let mut v = T::default();
+        // swap it into the vec
+        std::ptr::swap(self.0.get_unchecked_mut(id as usize), &mut v);
+        // return the old value
+        return v;
+    }
+}
+
+unsafe impl<T> DistinctStorage for DefaultVecStorage<T> {}
+
+impl<T> SafeSliceAccess<T> for DefaultVecStorage<T> {
+    /// Returns a slice of all the components in this storage.
+    #[inline]
+    fn as_slice(&self) -> &[T] {
+        self.0.as_slice()
+    }
+
+    /// Returns a mutable slice of all the components in this storage.
+    #[inline]
+    fn as_mut_slice(&mut self) -> &mut [T] {
+        self.0.as_mut_slice()
+    }
+}
