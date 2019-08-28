@@ -1,6 +1,7 @@
 //! Different types of storages you can use for your components.
 
 use std::collections::BTreeMap;
+use std::mem::MaybeUninit;
 
 use derivative::Derivative;
 use hashbrown::HashMap;
@@ -11,14 +12,16 @@ use crate::{
     world::Index,
 };
 
-pub trait SafeSliceAccess<T> {
-    fn as_slice(&self) -> &[T];
-    fn as_mut_slice(&mut self) -> &mut [T];
-}
+/// Some storages can provide slices to access the underlying data.
+///
+/// The underlying data may be of type `T`, or it may be of a type
+/// which wraps `T`. The associated type `Element` identifies what
+/// the slices will contain.
+pub trait SliceAccess<T> {
+    type Element;
 
-pub trait UnsafeSliceAccess<T> {
-    unsafe fn unsafe_slice(&self) -> &[T];
-    unsafe fn unsafe_mut_slice(&mut self) -> &mut [T];
+    fn as_slice(&self) -> &[Self::Element];
+    fn as_mut_slice(&mut self) -> &mut [Self::Element];
 }
 
 /// BTreeMap-based storage.
@@ -107,13 +110,15 @@ pub struct DenseVecStorage<T> {
     data_id: Vec<Index>,
 }
 
-impl<T> SafeSliceAccess<T> for DenseVecStorage<T> {
+impl<T> SliceAccess<T> for DenseVecStorage<T> {
+    type Element = T;
+
     /// Returns a slice of all the components in this storage.
     ///
     /// Indices inside the slice do not correspond to anything in particular, and
     /// especially do not correspond with entity IDs.
     #[inline]
-    fn as_slice(&self) -> &[T] {
+    fn as_slice(&self) -> &[Self::Element] {
         self.data.as_slice()
     }
 
@@ -122,7 +127,7 @@ impl<T> SafeSliceAccess<T> for DenseVecStorage<T> {
     /// Indices inside the slice do not correspond to anything in particular, and
     /// especially do not correspond with entity IDs.
     #[inline]
-    fn as_mut_slice(&mut self) -> &mut [T] {
+    fn as_mut_slice(&mut self) -> &mut [Self::Element] {
         self.data.as_mut_slice()
     }
 }
@@ -216,34 +221,24 @@ unsafe impl<T> DistinctStorage for NullStorage<T> {}
 /// Vector storage. Uses a simple `Vec`. Supposed to have maximum
 /// performance for the components mostly present in entities.
 ///
-/// `unsafe_slice()` and `unsafe_mut_slice()` indices correspond to
+/// `as_slice()` and `as_mut_slice()` indices correspond to
 /// entity IDs. These can be compared to other `VecStorage`s, to
 /// other `DefaultVecStorage`s, and to `Entity::id()`s for live
 /// entities.
 #[derive(Derivative)]
 #[derivative(Default(bound = ""))]
-pub struct VecStorage<T>(Vec<T>);
+pub struct VecStorage<T>(Vec<MaybeUninit<T>>);
 
-impl<T> UnsafeSliceAccess<T> for VecStorage<T> {
-    /// Returns a slice of all the components in this storage.
-    ///
-    /// # Safety
-    ///
-    /// This slice contains uninitialized and dropped values. If this is a
-    /// problem, consider using `DefaultVecStorage` or `DenseVecStorage` instead.
+impl<T> SliceAccess<T> for VecStorage<T> {
+    type Element = MaybeUninit<T>;
+
     #[inline]
-    unsafe fn unsafe_slice(&self) -> &[T] {
+    fn as_slice(&self) -> &[Self::Element] {
         self.0.as_slice()
     }
 
-    /// Returns a mutable slice of all the components in this storage.
-    ///
-    /// # Safety
-    ///
-    /// This slice contains uninitialized and dropped values. If this is a
-    /// problem, consider using `DefaultVecStorage` or `DenseVecStorage` instead.
     #[inline]
-    unsafe fn unsafe_mut_slice(&mut self) -> &mut [T] {
+    fn as_mut_slice(&mut self) -> &mut [Self::Element] {
         self.0.as_mut_slice()
     }
 }
@@ -256,23 +251,22 @@ impl<T> UnprotectedStorage<T> for VecStorage<T> {
         use std::ptr;
         for (i, v) in self.0.iter_mut().enumerate() {
             if has.contains(i as u32) {
-                ptr::drop_in_place(v);
+                // drop in place
+                ptr::drop_in_place(&mut *v.as_mut_ptr());
             }
         }
         self.0.set_len(0);
     }
 
     unsafe fn get(&self, id: Index) -> &T {
-        self.0.get_unchecked(id as usize)
+        &*self.0.get_unchecked(id as usize).as_ptr()
     }
 
     unsafe fn get_mut(&mut self, id: Index) -> &mut T {
-        self.0.get_unchecked_mut(id as usize)
+        &mut *self.0.get_unchecked_mut(id as usize).as_mut_ptr()
     }
 
     unsafe fn insert(&mut self, id: Index, v: T) {
-        use std::ptr;
-
         let id = id as usize;
         if self.0.len() <= id {
             let delta = id + 1 - self.0.len();
@@ -281,12 +275,11 @@ impl<T> UnprotectedStorage<T> for VecStorage<T> {
         }
         // Write the value without reading or dropping
         // the (currently uninitialized) memory.
-        ptr::write(self.0.get_unchecked_mut(id), v);
+        *self.0.get_unchecked_mut(id as usize) = MaybeUninit::new(v);
     }
 
     unsafe fn remove(&mut self, id: Index) -> T {
         use std::ptr;
-
         ptr::read(self.get(id))
     }
 }
@@ -347,16 +340,18 @@ impl<T> UnprotectedStorage<T> for DefaultVecStorage<T> where T: Default {
 
 unsafe impl<T> DistinctStorage for DefaultVecStorage<T> {}
 
-impl<T> SafeSliceAccess<T> for DefaultVecStorage<T> {
+impl<T> SliceAccess<T> for DefaultVecStorage<T> {
+    type Element = T;
+
     /// Returns a slice of all the components in this storage.
     #[inline]
-    fn as_slice(&self) -> &[T] {
+    fn as_slice(&self) -> &[Self::Element] {
         self.0.as_slice()
     }
 
     /// Returns a mutable slice of all the components in this storage.
     #[inline]
-    fn as_mut_slice(&mut self) -> &mut [T] {
+    fn as_mut_slice(&mut self) -> &mut [Self::Element] {
         self.0.as_mut_slice()
     }
 }

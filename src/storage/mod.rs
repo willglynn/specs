@@ -13,7 +13,7 @@ pub use self::{
     track::{ComponentEvent, Tracked},
 };
 
-use self::storages::{SafeSliceAccess, UnsafeSliceAccess};
+use self::storages::SliceAccess;
 
 use std::{
     self,
@@ -265,13 +265,13 @@ impl<'e, T, D> Storage<'e, T, D>
     where
         T: Component,
         D: Deref<Target = MaskedStorage<T>>,
-        T::Storage: SafeSliceAccess<T>
+        T::Storage: SliceAccess<T>
 {
     /// Returns the component data as a slice.
     ///
     /// The indices of this slice may not correspond to anything in particular.
     /// Check the underlying storage documentation for details.
-    pub fn as_slice(&self) -> &[T] {
+    pub fn as_slice(&self) -> &[<T::Storage as SliceAccess<T>>::Element] {
         self.data.inner.as_slice()
     }
 }
@@ -280,52 +280,14 @@ impl<'e, T, D> Storage<'e, T, D>
     where
         T: Component,
         D: DerefMut<Target = MaskedStorage<T>>,
-        T::Storage: SafeSliceAccess<T>
+        T::Storage: SliceAccess<T>
 {
     /// Returns the component data as a slice.
     ///
     /// The indices of this slice may not correspond to anything in particular.
     /// Check the underlying storage documentation for details.
-    pub fn as_mut_slice(&mut self) -> &mut [T] {
+    pub fn as_mut_slice(&mut self) -> &mut [<T::Storage as SliceAccess<T>>::Element] {
         self.data.inner.as_mut_slice()
-    }
-}
-
-impl<'e, T, D> Storage<'e, T, D>
-    where
-        T: Component,
-        D: Deref<Target = MaskedStorage<T>>,
-        T::Storage: UnsafeSliceAccess<T>
-{
-    /// Returns the component data as a slice.
-    ///
-    /// The indices of this slice may not correspond to anything in particular.
-    /// Check the underlying storage documentation for details.
-    ///
-    /// # Safety
-    ///
-    /// This slice contains uninitialized or dropped data.
-    pub unsafe fn unsafe_slice(&self) -> &[T] {
-        self.data.inner.unsafe_slice()
-    }
-}
-
-impl<'e, T, D> Storage<'e, T, D>
-    where
-        T: Component,
-        D: DerefMut<Target = MaskedStorage<T>>,
-        T::Storage: UnsafeSliceAccess<T>
-{
-    /// Returns the component data as a slice.
-    ///
-    /// The indices of this slice may not correspond to anything in particular.
-    /// Check the underlying storage documentation for details.
-    ///
-    /// # Safety
-    ///
-    /// This slice contains uninitialized or dropped data.
-    pub unsafe fn unsafe_mut_slice(&mut self) -> &mut [T] {
-        self.data.inner.unsafe_mut_slice()
     }
 }
 

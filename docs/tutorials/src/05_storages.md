@@ -50,11 +50,11 @@ to the corresponding heading.
 
 Certain storages provide access to component slices:  
 
-|Storage Type            | Safety  | Density | Indices       |
-|:----------------------:|---------|---------|---------------|
-| [`DenseVecStorage`]    | Safe    | Dense   | Arbitrary     |
-| [`VecStorage`]         | Unsafe  | Sparse  | Entity `id()` |
-| [`DefaultVecStorage`]  | Safe    | Sparse  | Entity `id()` |
+|Storage Type            | Slice type          | Density | Indices       |
+|:----------------------:|---------------------|---------|---------------|
+| [`DenseVecStorage`]    | `&[T]`              | Dense   | Arbitrary     |
+| [`VecStorage`]         | `&[MaybeUninit<T>]` | Sparse  | Entity `id()` |
+| [`DefaultVecStorage`]  | `&[T]`              | Sparse  | Entity `id()` |
 
 This is intended as an advanced technique. Component slices provide
 maximally efficient reads and writes, but they are incompatible with
@@ -73,10 +73,10 @@ one which provides a mapping from the entity id to the index for the data vec
 (it's a redirection table). This is useful when your component is bigger
 than a `usize` because it consumes less RAM.
 
-`DenseVecStorage` provides `as_slice()` and `as_mut_slice()` accessors to
-directly access component data. The indices in this slice do not correspond
-to entity IDs, nor do they correspond to indices in any other storage, nor
-do they correspond to indices in this storage at a different point in time.
+`DefaultVecStorage<T>` provides `as_slice()` and `as_mut_slice()` accessors
+which return `&[T]`. The indices in this slice do not correspond to entity
+IDs, nor do they correspond to indices in any other storage, nor do they
+correspond to indices in this storage at a different point in time.
 
 ## `HashMapStorage`
 
@@ -103,11 +103,10 @@ Therefore it would be a waste of memory to use this storage for
 rare components, but it's best suited for commonly used components
 (like transform values).
 
-`VecStorage` provides unsafe `as_slice()` and `as_mut_slice()` accessors.
-These functions are `unsafe` because the slices contain uninitialized and
-dropped values. (Consult the `Storage::mask()` to determine which indices
-are populated.) Slice indices cannot be converted to `Entity` values
-because they lack a generation counter, but they do correspond to
+`VecStorage<T>` provides `as_slice()` and `as_mut_slice()` accessors which
+return `&[MaybeUninit<T>]`. Consult the `Storage::mask()` to determine
+which indices are populated. Slice indices cannot be converted to `Entity`
+values because they lack a generation counter, but they do correspond to
 `Entity::id()`s, so indices can be used to collate between multiple
 `VecStorage`s.
 
@@ -118,8 +117,9 @@ uninitialized, it fills them with the component's default value. This
 requires the component to `impl Default`, and it results in more memory
 writes than `VecStorage`.
 
-`DefaultVecStorage` provides `as_slice()` and `as_mut_slice()` accessors to
-directly access component data. Slice usage is equivalent to `VecStorage`,
-except that every value is initialized so the resulting slice can be safely
-used without checking the mask. `DefaultVecStorage` indices all correspond
-with each other and with `VecStorage` indices.
+`DefaultVecStorage` provides `as_slice()` and `as_mut_slice()` accessors
+which return `&[T]`. `Storage::mask()` can be used to determine which
+indices are in active use, but all indices are fully initialized, so the
+`mask()` is not necessary for safety. `DefaultVecStorage` indices all
+correspond with each other, with `VecStorage` indices, and with
+`Entity::id()`s.

@@ -3,6 +3,7 @@ use std::any::Any;
 use super::*;
 use crate::world::{Component, Entity, Generation, Index, WorldExt};
 use shred::World;
+use std::mem::MaybeUninit;
 
 fn create<T: Component>(world: &mut World) -> WriteStorage<T>
 where
@@ -428,9 +429,9 @@ mod test {
         }
     }
 
-    fn test_safe_slice<T: Component + From<u32> + Debug + Eq>()
+    fn test_slice_access<T: Component + From<u32> + Debug + Eq>()
         where
-            T::Storage: Default + SafeSliceAccess<T>,
+            T::Storage: Default + SliceAccess<T, Element=T>,
     {
         let mut w = World::new();
         let mut s: Storage<T, _> = create(&mut w);
@@ -448,9 +449,9 @@ mod test {
         }
     }
 
-    fn test_unsafe_slice<T: Component + From<u32> + Debug + Eq>()
+    fn test_maybeuninit_slice<T: Component + From<u32> + Debug + Eq>()
         where
-            T::Storage: Default + UnsafeSliceAccess<T>,
+            T::Storage: Default + SliceAccess<T, Element=MaybeUninit<T>>,
     {
         let mut w = World::new();
         let mut s: Storage<T, _> = create(&mut w);
@@ -461,9 +462,10 @@ mod test {
             }
         }
 
-        let slice = unsafe { s.unsafe_slice() };
+        let slice = s.as_slice();
         assert_eq!(slice.len(), 1_000);
         for (i, v) in slice.iter().enumerate() {
+            let v = unsafe { &*v.as_ptr() };
             assert_eq!(v, &(i as u32 + 2718).into());
         }
     }
@@ -501,8 +503,8 @@ mod test {
         test_anti::<Cvec>();
     }
     #[test]
-    fn vec_test_unsafe_slice() {
-        test_unsafe_slice::<Cvec>();
+    fn vec_test_maybeuninit_slice() {
+        test_maybeuninit_slice::<Cvec>();
     }
 
     #[test]
@@ -557,8 +559,8 @@ mod test {
         test_anti::<CdefaultVec>();
     }
     #[test]
-    fn default_vec_test_safe_slice() {
-        test_safe_slice::<CdefaultVec>();
+    fn default_vec_test_slice_access() {
+        test_slice_access::<CdefaultVec>();
     }
 
     #[test]
